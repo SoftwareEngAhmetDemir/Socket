@@ -6,6 +6,11 @@ var io = require("socket.io")(http);
 var mresult = [];
 app.use(cors());
 // ///////////////////////
+
+app.get('/',(req,res)=>{
+  res.send('Mrba')
+})
+
 app.get("/katilanlarsayisi", async (req, res) => {
   console.log("istendi");
   var t = [];
