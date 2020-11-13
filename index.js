@@ -5,33 +5,75 @@ var http = require("http").createServer(app);
 var io = require("socket.io")(http);
 var mresult = [];
 app.use(cors());
+// ///////////////////////
+app.get("/katilanlarsayisi", async (req, res) => {
+  console.log("istendi");
+  var t = [];
 
-app.get("/update/:ilanid/:userid/:username/:fiyat", (req, res) => {
   var MongoClient = require("mongodb").MongoClient;
 
   var url =
     "mongodb+srv://murat:murat3838@cluster0-2yepv.gcp.mongodb.net/test?authSource=admin&replicaSet=Cluster0-shard-0&w=majority&readPreference=primary&appname=MongoDB%20Compass&retryWrites=true&ssl=true";
+  await new Promise((resolve, rej) => {
+    MongoClient.connect(url, async function (err, db) {
+      var dbo = db.db("test");
 
-  MongoClient.connect(url, function (err, db) {
-    var dbo = db.db("test");
-    var myquery = { ilanid: req.params.ilanid };
-    var newvalues = {
-      $set: {
-        ilanid: req.params.ilanid,
-        userid: req.params.userid,
-        username: req.params.username,
-        fiyat: req.params.fiyat,
-      },
-    };
-    dbo.collection("teklif").updateOne(myquery, newvalues, function (err, res) {
-      if (err) throw err;
-      // console.log(res.result.nModified + " document(s) updated");
-      io.emit("name", req.params.fiyat);
-      db.close();
+      dbo
+        .collection("teklif")
+        .find({})
+        .toArray(function (err, result) {
+          if (err) throw err;
+          console.log(result);
+          t = result;
+          resolve("");
+          db.close();
+        });
+    });
+  })
+    .then((resolve) => {
+      const tt = res.json(t.length);
+      io.emit("sayi", tt);
+      // console.log(res.json(t.length));
+      res.send(tt);
+      // res.send(t.length);
+    })
+    .catch((e) => {
+      // console.log('error')
+      res.send(e);
+    });
+  res.send("bitti");
+});
+
+// //////////////////
+app.get("/update/:ilanid/:userid/:username/:fiyat", async (req, res) => {
+  var MongoClient = require("mongodb").MongoClient;
+
+  var url =
+    "mongodb+srv://murat:murat3838@cluster0-2yepv.gcp.mongodb.net/test?authSource=admin&replicaSet=Cluster0-shard-0&w=majority&readPreference=primary&appname=MongoDB%20Compass&retryWrites=true&ssl=true";
+  await new Promise((resolve, rej) => {
+    MongoClient.connect(url, async function (err, db) {
+      var dbo = db.db("test");
+      var myquery = { ilanid: req.params.ilanid };
+      var newvalues = {
+        $set: {
+          ilanid: req.params.ilanid,
+          userid: req.params.userid,
+          username: req.params.username,
+          fiyat: req.params.fiyat,
+        },
+      };
+      dbo
+        .collection("teklif")
+        .updateOne(myquery, newvalues, async function (err, res) {
+          if (err) throw err;
+          // console.log(res.result.nModified + " document(s) updated");
+          resolve("");
+          db.close();
+        });
     });
   });
-
-  res.end("end");
+  io.emit("name", req.params.fiyat);
+  res.send(req.params.fiyat);
 });
 // ////////////////////
 
@@ -62,20 +104,15 @@ app.get("/tarih/:ilanid", async (req, res) => {
   }).then(async (resolve) => {
     if (t.length === 0) {
       await io.emit("name", "dahayok");
-      res.end("");
+      res.send("");
     } else {
       await io.emit("name", t[0].fiyat);
-      res.end("");
+      res.send("");
     }
   });
 });
 
-
-
-
 // ///////////////////////////
-
-
 
 app.get("/:ilanid", async (req, res) => {
   var MongoClient = require("mongodb").MongoClient;
@@ -104,10 +141,10 @@ app.get("/:ilanid", async (req, res) => {
   }).then(async (resolve) => {
     if (t.length === 0) {
       await io.emit("name", "dahayok");
-      res.end("");
+      res.send("");
     } else {
       await io.emit("name", t[0].fiyat);
-      res.end("");
+      res.send("");
     }
   });
 });
@@ -141,7 +178,7 @@ app.get(
         db.close();
       });
     });
-    res.end("");
+    res.send("");
   }
 );
 
@@ -149,4 +186,3 @@ app.get(
 http.listen(8000, () => {
   console.log("listening on *:6000");
 });
-
